@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bubbles App</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    canvas {
+      background: white;
+      border: 1px solid #ccc;
+      display: block;
+      margin-bottom: 20px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+<h1>Bubbles App</h1>
+<canvas id="canvas" width="700" height="300"></canvas>
+<div class="controls">
+  <button id="hitBtn">Hit</button>
+  <button id="resetBtn" disabled>Reset</button>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  const circle = {
+    x: 150,
+    y: canvas.height / 2,
+    r: 60,
+    color: '#5EEAD4'
+  };
+
+  const arrow = {
+    x: canvas.width - 80,   // tip of the arrow
+    y: canvas.height / 2,
+    w: 100,
+    h: 40,
+    speed: 5,
+    startX: canvas.width - 80,
+    moving: false
+  };
+
+  const hitBtn = document.getElementById('hitBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  function drawCircle() {
+    ctx.beginPath();
+    ctx.arc(circle.x, circle.y, circle.r, 0, Math.PI * 2);
+    ctx.fillStyle = circle.color;
+    ctx.fill();
+  }
+
+  function drawArrow() {
+    const x = arrow.x;
+    const y = arrow.y;
+    const w = arrow.w;
+    const h = arrow.h;
+
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.moveTo(x, y);                          // tip
+    ctx.lineTo(x + 15, y - h / 2);             // top of arrowhead
+    ctx.lineTo(x + 15, y - h / 4);             // top joint with shaft
+    ctx.lineTo(x + w, y - h / 4);              // back top of shaft
+    ctx.lineTo(x + w, y + h / 4);              // back bottom of shaft
+    ctx.lineTo(x + 15, y + h / 4);             // bottom joint with shaft
+    ctx.lineTo(x + 15, y + h / 2);             // bottom of arrowhead
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawCircle();
+    drawArrow();
+  }
+
+  function hitDetected() {
+    // check if tip of arrow (arrow.x) has entered the circle
+    return arrow.x <= (circle.x + circle.r);
+  }
+
+  let animationId;
+
+  function animate() {
+    if (!arrow.moving) return;
+    if (hitDetected()) {
+      arrow.moving = false;
+      circle.color = '#16a34a'; // green to show hit
+      hitBtn.disabled = true;
+      resetBtn.disabled = false;
+      cancelAnimationFrame(animationId);
+      draw();
+      return;
+    }
+    arrow.x -= arrow.speed;
+    draw();
+    animationId = requestAnimationFrame(animate);
+  }
+
+  hitBtn.onclick = () => {
+    if (!arrow.moving) {
+      arrow.moving = true;
+      hitBtn.disabled = true;
+      resetBtn.disabled = true;
+      animate();
+    }
+  };
+
+  resetBtn.onclick = () => {
+    if (arrow.moving) return; // Don't reset if arrow is still moving forward
+
+    let resetAnimationId;
+
+    function resetAnimate() {
+      if (arrow.x < arrow.startX) {
+        arrow.x += arrow.speed;
+        if (arrow.x > arrow.startX) arrow.x = arrow.startX;
+        draw();
+        resetAnimationId = requestAnimationFrame(resetAnimate);
+      } else {
+        cancelAnimationFrame(resetAnimationId);
+        circle.color = '#5EEAD4';
+        hitBtn.disabled = false;
+        resetBtn.disabled = true;
+        draw();
+      }
+    }
+
+    resetAnimate();
+  };
+
+  draw();
+})();
+</script>
+
+</body>
+</html>
